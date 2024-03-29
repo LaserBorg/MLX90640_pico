@@ -59,7 +59,7 @@ constexpr uint8_t MLX_I2C_ADDR = 0x33;          // I2C address of the MLX90640
 
 int main() {
 
-    stdio_init_all();
+    stdio_init_all(460800);
     tusb_init();
 
     sleep_ms(40 + 500); // after Power-On wait a bit for the MLX90640 to initialize
