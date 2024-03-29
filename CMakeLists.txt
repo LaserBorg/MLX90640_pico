@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.12)
 # note: this must happen before project()
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
-project(hello C CXX ASM)
+project(MLX90640_Pico C CXX ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
@@ -13,8 +13,6 @@ add_executable(thermocam
     main.cpp
     MLX90640_PICO_I2C_Driver.cpp
     ./mlx90640-library/functions/MLX90640_API.c
-    SSD1351_PICO_SPI_Driver.cpp
-    SSD1351_API.cpp
 )
 
 target_include_directories(thermocam PUBLIC
@@ -28,14 +26,16 @@ target_link_libraries(thermocam
     hardware_spi
     hardware_gpio
     pico_multicore
+    tinyusb_device
+    tinyusb_board
 )
 
 # initialize the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# Enable USB, UART output
-pico_enable_stdio_usb(thermocam 0)
-pico_enable_stdio_uart(thermocam 1)
+# Enable USB, disable UART output
+pico_enable_stdio_usb(thermocam 1)
+pico_enable_stdio_uart(thermocam 0)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(thermocam)
