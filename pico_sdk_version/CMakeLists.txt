@@ -13,13 +13,13 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(thermocam
-    main.cpp
-    MLX90640_PICO_I2C_Driver.cpp
-    ./mlx90640-library/functions/MLX90640_API.c
+    pico_sdk_version/main.cpp
+    pico_sdk_version/MLX90640_PICO_I2C_Driver.cpp
+    pico_sdk_version/mlx90640-library/functions/MLX90640_API.c
 )
 
 target_include_directories(thermocam PUBLIC
-    ./mlx90640-library/headers
+    pico_sdk_version/mlx90640-library/headers
 )
 
 # Add pico_stdlib library which aggregates commonly used features
