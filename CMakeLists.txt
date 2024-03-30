@@ -6,6 +6,9 @@ include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 
 project(MLX90640_Pico C CXX ASM)
 
+# initialize the Raspberry Pi Pico SDK
+pico_sdk_init()
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
@@ -25,13 +28,7 @@ target_link_libraries(thermocam
     hardware_i2c
     hardware_spi
     hardware_gpio
-    pico_multicore
-    tinyusb_device
-    tinyusb_board
 )
-
-# initialize the Raspberry Pi Pico SDK
-pico_sdk_init()
 
 # Enable USB, disable UART output
 pico_enable_stdio_usb(thermocam 1)

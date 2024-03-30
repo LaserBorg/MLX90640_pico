@@ -1,28 +1,21 @@
 # Fast (23 fps) MLX90640 based Thermal Camera for Raspberry Pi Pico (RP2040)
 
-A simple but fast Thermal Imaging Camera using the MLX90640 sensor, a 1.5 inch RGB OLED Display Module, and two optional touch sensor modules.
-
-![breadboard setup showing thermal image of a candle](images/movie.gif)
+A simple but fast Thermal Imaging Camera using the MLX90640 sensor and USB-CDC
 
 ## Features
 - fast: 23 frames per second by employing both cores of the RP2040 (whereas a single core would only result in 11 fps):
-  - core0 fetches the pages from the MLX90640 and scales the data down to 8-bit integers
-  - core1 renders the data on the OLED after optionally smoothing the data by bilinear interpolation
-- configurable heat-map (predefined 7-colors, 5-colors, 2-colors, and grey map)
-- touch button for disabling interpolation
-- touch button for freezing the displayed image
+  - core0 fetches the pages from the MLX90640
+  - core1 handles USB-CDC
+
 
 ## Code Based on
 - unmodified Melexis Driver: https://github.com/melexis/mlx90640-library/
-- heat map code inspired by: http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients
 - the [Pico SDK](https://www.raspberrypi.com/documentation/microcontrollers/c_sdk.html)
 
 ## Hardware
-- Raspberry Pi Pico (RP2040)
+- Raspberry Pi Pico or Pico W (RP2040)
 - MLX90640 Thermal Camera Breakout (55º or 110º), e.g. [Pimoroni](https://shop.pimoroni.com/products/mlx90640-thermal-camera-breakout)
-- 1.5inch RGB OLED Display Module, 65K RGB Colors, 128×128, SPI, e.g. [Waveshare](https://www.waveshare.com/1.5inch-rgb-oled-module.htm)
-- Optional: 2 buttons, e.g. [TTP223 Touch Sensor Modules](https://hobbycomponents.com/sensors/901-ttp223-capacitive-touch-sensor)
-- Optional: battery module, e.g. [LiPo Charger/Booster module](https://www.sparkfun.com/products/14411)
+
 
 ### Wiring
 
@@ -33,32 +26,25 @@ Connect the MLX90640 and the OLED to the 3.3 V Pin 36 of the Raspberry PI Pico.
 | SDA      | I2C0 SDA | 16   | 21  |
 | SDC      | I2C0 SDC | 17   | 22  |
 
-| OLED | RP2040   | GPIO | Pin |
-| ---  | -------- | ---- | --- |
-| DC   | SPI1 DC  | 9    | 12  |
-| CLK  | SPI1 SCK | 10   | 14  |
-| DIN  | SPI1 TX  | 11   | 15  |
-| CS   | SPI1 CSn | 13   | 17  |
-| RST  | RST      | 15   | 20  |
-
-| Touch Buttons         | GPIO | Pin |
-| --------------------- | ---- | --- |
-| Disable Interpolation | 14   | 19  |
-| Freeze Image          | 18   | 24  |
 
 ## Building
 - make sure the "[Pico SDK](https://www.raspberrypi.com/documentation/microcontrollers/c_sdk.html)" is installed and the environment variable "PICO_SDK_PATH" refers to it.
-- `git clone https://github.com/weinand/thermal-imaging-camera`
-- `cd thermal-imaging-camera`
+- `git clone https://github.com/LaserBorg/MLX90640_pico.git -b main --depth 1`
+- `cd MLX90640_pico`
 - `git submodule init`
-- `git submodule update`
+- `git submodule update --recursive`
 - `mkdir build`
 - `cd build`
-- `cmake ..`
-- `make`
+- `export PICO_SDK_PATH=/home/flip/pico/pico-sdk`
+- `cmake .. -DPICO_BOARD=pico_w`
+- `make -j8`
 
 ## More Images
 
 ![breadboard setup showing thermal image of a candle](images/photo_1.jpg)
 
 ![close-up of OLED display showing camera](images/photo_2.jpg)
+
+## other
+
+- heat map inspiration: http://www.andrewnoske.com/wiki/Code_-_heatmaps_and_color_gradients

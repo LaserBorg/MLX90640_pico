@@ -18,11 +18,37 @@
 #include <ctime>
 #include <math.h>
 #include <pico/stdlib.h>
+#include <pico/multicore.h>
+#include "tusb_config.h"
+#include <tusb.h> // TinyUSB
+
+#include <pico/mutex.h>
+#include <mutex>  // REMOVE THAT THEN?
+
+mutex_t mtx; // Mutex for synchronizing access to the values array
 
 extern "C"{
 #include <MLX90640_I2C_Driver.h>
 #include <MLX90640_API.h>
 }
+
+extern "C" void core1_entry() {
+    while (true) {
+        tud_task(); // TinyUSB task. Must be called in the main loop
+
+        mutex_enter_blocking(&mtx); // Lock the mutex before accessing the values array
+
+        // send frame marker
+        uint8_t marker[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+        tud_cdc_write(marker, 4);
+
+        // send temperature values
+        tud_cdc_write(values, MLX90640_PIXEL_NUM * sizeof(float));
+
+        mutex_exit(&mtx); // Unlock the mutex after we're done with the values array
+    }
+}
+
 
 // ---- configuration ----
 
@@ -38,6 +64,7 @@ float values[MLX90640_PIXEL_NUM];            // array for the temperature values
 int main() {
 
     stdio_init_all();
+    tusb_init();
 
     sleep_ms(40 + 500); // after Power-On wait a bit for the MLX90640 to initialize
 
@@ -55,6 +82,8 @@ int main() {
     uint16_t *captureFrame = new uint16_t[834];     // too large for allocating on stack 
     int patternMode = MLX90640_GetCurMode(MLX_I2C_ADDR);
 
+    multicore_launch_core1(core1_entry);
+
     while (true) {
         // read pages (half frames) from the MLX90640
         int status = MLX90640_GetFrameData(MLX_I2C_ADDR, captureFrame);
@@ -64,18 +93,13 @@ int main() {
         }
         float eTa = MLX90640_GetTa(captureFrame, params) + OPENAIR_TA_SHIFT;
 
+        mutex_enter_blocking(&mtx); // Lock the mutex before accessing the values array
+
         MLX90640_CalculateTo(captureFrame, params, EMISSIVITY, eTa, values);
         MLX90640_BadPixelsCorrection(params->brokenPixels, values, patternMode, params);
         MLX90640_BadPixelsCorrection(params->outlierPixels, values, patternMode, params);
 
-        // send frame marker
-        uint8_t marker[4] = {0xFF, 0xFF, 0xFF, 0xFF};
-        printf("%s", marker);
-
-        // send temperature values
-        for (int i = 0; i < MLX90640_PIXEL_NUM; i++) {
-            printf("%f", values[i]);
-        }
+        mutex_exit(&mtx); // Unlock the mutex after we're done with the values array
     }
 
     delete captureFrame;
