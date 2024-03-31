@@ -1,2 +1,2 @@
-import usb_cdc
-usb_cdc.enable(console=False, data=True)
+import usb_cdc     # type: ignore
+usb_cdc.enable(console=True, data=True)

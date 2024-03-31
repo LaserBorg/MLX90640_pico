@@ -1,2 +1,4 @@
 pyserial
 numpy
+opencv-python
+matplotlib
