@@ -5,4 +5,6 @@ pico_sdk_version/build/*
 pico_circuitpython/_tmp_
 pico_circuitpython/settings.toml
 
-host_python/_tmp_
+_tmp_
+
+images/*.pdf
