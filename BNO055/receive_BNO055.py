@@ -1,11 +1,65 @@
 '''
-receive BNO055 sensor data from USB and display a graph
+receive BNO055 sensor data from USB
 '''
 
 import serial
-import matplotlib.pyplot as plt
-from collections import deque
 import numpy as np
+import open3d as o3d
+import time
+
+
+class IMU_Visualizer:
+    def __init__(self):
+        # Initialize Open3D visualizer
+        self.vis = o3d.visualization.Visualizer()
+        self.vis.create_window(width=640, height=480)
+
+        # Create a 3D box to represent the sensor
+        self.box = o3d.geometry.TriangleMesh.create_box(width=1, height=1, depth=1)
+        self.box.compute_vertex_normals()
+        self.box.paint_uniform_color([0.5, 0.5, 0.5])  # Gray color
+        self.vis.add_geometry(self.box)
+
+        # Create a coordinate frame
+        self.frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.5, origin=[0, 0, 0])
+        self.vis.add_geometry(self.frame)
+
+        # Set the camera parameters
+        ctr = self.vis.get_view_control()
+        ctr.set_zoom(1.5)  # Adjust this value to move the camera further away
+
+        self.prev_acceleration = np.array([0.0, 0.0, 0.0])
+        self.velocity = np.array([0.0, 0.0, 0.0])
+        self.position = np.array([0.0, 0.0, 0.0])
+        self.euler = np.array([0, 0, 0])
+        self.dt = 0.01 
+
+
+    def integrate_acceleration(self, acceleration):
+        acceleration = np.array(acceleration)
+        self.velocity += 0.5 * (acceleration + self.prev_acceleration) * self.dt
+        self.position += self.velocity * self.dt
+        self.prev_acceleration = acceleration
+        return self.position
+    
+
+    def update_visualization(self, pos=(0,0,0), euler=(0,0,0)):
+        # swap the axes to match the Open3D coordinate system
+        euler = (euler[2], -euler[0], -euler[1])
+
+        euler = np.array(euler)
+        delta_euler = euler - self.euler
+        self.euler = euler
+
+        R = self.box.get_rotation_matrix_from_xyz(np.radians(delta_euler))
+        self.box.rotate(R, center=self.box.get_center())
+
+        self.box.translate(pos, relative=False)
+        
+        # Update the visualizer
+        self.vis.update_geometry(self.box)
+        self.vis.poll_events()
+        self.vis.update_renderer()
 
 
 def read_BNO055_from_serial(ser):
@@ -40,33 +94,14 @@ def read_BNO055_from_serial(ser):
     return temperature, acceleration, magnetic, gyro, euler, quaternion, linear_acceleration, gravity
 
 
-def display_graph(linear_acceleration, history):
-    # Append new values to the history
-    history.append(linear_acceleration)
-
-    # Discard the oldest values if the history is too long
-    if len(history) > 100:  # Adjust this value to change the X scale
-        history.popleft()
-
-    # Display the graph
-    for i, color in zip(range(3), ['r', 'g', 'b']):
-        plt.plot([x[i] for x in history], color=color)
-    plt.draw()
-    plt.pause(0.001)
-    plt.clf()
-
-
-
-
 if __name__ == "__main__":
     
     port = 'COM3'
-    FRAME_MARKER = b'\xAA\xAA'  # Define the 2-byte frame marker
-    
-    history = deque()  # Use a deque for efficient removal of oldest values
+    FRAME_MARKER = b'\xAA\xAA'
 
-    with serial.Serial(port, 921600, timeout=1) as ser:  # baudrate is irrelevant for USB-CDC
-        plt.ion()  # Turn on interactive mode
+    imu_visualizer = IMU_Visualizer()
+
+    with serial.Serial(port, 921600, timeout=1) as ser:
         while True:
             values = read_BNO055_from_serial(ser)
             
@@ -81,10 +116,14 @@ if __name__ == "__main__":
                 # print("Quaternion:", quaternion, "Length:", len(quaternion))
                 # print("Linear acceleration:", linear_acceleration, "Length:", len(linear_acceleration))
                 # print("Gravity:", gravity, "Length:", len(gravity))
-                
-                display_graph(linear_acceleration, history)
+
+
+                # # Integrate the acceleration to get the position
+                # position = imu_visualizer.integrate_acceleration(acceleration)
+                # print("Position:", position)
+
+                imu_visualizer.update_visualization(euler=euler)
+                time.sleep(imu_visualizer.dt)
+
             else:
                 print("Resynchronizing...")
-
-    plt.ioff()  # Turn off interactive mode
-    plt.show()

@@ -45,6 +45,8 @@ def read_thermal_from_serial(ser):
                     # Flip the image vertically
                     image = np.flip(image, 0)
 
+                    # print(image.min(), image.max())
+
                     return image
 
 
@@ -73,7 +75,7 @@ def display_thermal(thermal_map, size=(320, 240)):
 
 
 if __name__ == "__main__":
-    port = 'COM4'
+    port = 'COM3'
     frame_marker = b'\xAA\xAA'
     frame_shape = (24, 32)  # MLX90640: 32 rows, 24 columns
     num_pixels = frame_shape[0] * frame_shape[1]
