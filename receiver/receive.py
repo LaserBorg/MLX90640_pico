@@ -50,26 +50,24 @@ def read_thermal_from_serial(ser):
                     return image
 
 
-def display_thermal(thermal_map, size=(320, 240)):
+def display_thermal(thermal_map, size=(320, 240), vdefault=(20, 40)):
 
-    def apply_cmap(thermal_map, vmin=None, vmax=None):
-        # If vmin and vmax are not specified, set them to the 5th and 95th percentiles of the data
+    def apply_cmap(thermal_map, vdefault, vmin=None, vmax=None):
+        # If vmin and vmax are not specified, set them to min and max within a reasonable range
         if vmin is None:
-            vmin = np.percentile(thermal_map, 5)
+            vmin = min(np.min(thermal_map), vdefault[0])
         if vmax is None:
-            vmax = np.percentile(thermal_map, 95)
+            vmax = max(np.max(thermal_map), vdefault[1])
 
-        # Normalize the thermal map to the vmin-vmax range
-        normalized_map = (thermal_map - vmin) / (vmax - vmin)
-
-        # apply the colormap
+        # Normalize the thermal map to the vmin-vmax range and apply the colormap
         cmap = cm.ScalarMappable(cmap='CMRmap', norm=colors.Normalize(vmin=0, vmax=1))
+        normalized_map = (thermal_map - vmin) / (vmax - vmin)
         cmapped_image = cmap.to_rgba(normalized_map)
 
         cmapped_image = cv2.cvtColor((cmapped_image * 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
         return cmapped_image
 
-    cmapped_image = apply_cmap(thermal_map.copy())
+    cmapped_image = apply_cmap(thermal_map.copy(), vdefault)
     cmapped_image = cv2.resize(cmapped_image, size, interpolation = cv2.INTER_NEAREST)
     cv2.imshow('Image', cmapped_image)
 
